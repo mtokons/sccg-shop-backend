@@ -38,11 +38,11 @@ router.post('/register', async (req, res) => {
       res.status(201).json({
         success: true,
         data: {
-          _id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
-          token: generateToken(user._id)
+          token: generateToken(user.id)
         }
       });
     }
@@ -82,11 +82,11 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       data: {
-        _id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id)
+        token: generateToken(user.id)
       }
     });
   } catch (error) {

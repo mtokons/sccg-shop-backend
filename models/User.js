@@ -25,14 +25,27 @@ const User = sequelize.define('User', {
   },
   password: {
     type: DataTypes.STRING(255),
-    allowNull: false,
+    allowNull: true,
     validate: {
-      len: { args: [6, 255], msg: 'Password must be at least 6 characters' }
+      isLongEnough(value) {
+        if (this.provider === 'local' && (!value || value.length < 6)) {
+          throw new Error('Password must be at least 6 characters');
+        }
+      }
     }
   },
   role: {
     type: DataTypes.ENUM('user', 'admin'),
     defaultValue: 'user'
+  },
+  provider: {
+    type: DataTypes.ENUM('local', 'google'),
+    defaultValue: 'local'
+  },
+  googleId: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
   }
 }, {
   tableName: 'users',
@@ -45,7 +58,7 @@ const User = sequelize.define('User', {
       }
     },
     beforeUpdate: async (user) => {
-      if (user.changed('password')) {
+      if (user.changed('password') && user.password) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
       }
@@ -55,6 +68,9 @@ const User = sequelize.define('User', {
 
 // Compare password method
 User.prototype.comparePassword = async function(candidatePassword) {
+  if (!this.password) {
+    return false;
+  }
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

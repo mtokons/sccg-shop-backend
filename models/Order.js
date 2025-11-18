@@ -7,6 +7,11 @@ const Order = sequelize.define('Order', {
     primaryKey: true,
     autoIncrement: true
   },
+  orderNumber: {
+    type: DataTypes.STRING(20),
+    unique: true,
+    allowNull: false
+  },
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -40,7 +45,28 @@ const Order = sequelize.define('Order', {
   }
 }, {
   tableName: 'orders',
-  timestamps: true
+  timestamps: true,
+  hooks: {
+    beforeCreate: async (order) => {
+      // Generate unique order number: ORD-YYYYMMDD-XXXXX
+      const date = new Date();
+      const dateStr = date.getFullYear() +
+        String(date.getMonth() + 1).padStart(2, '0') +
+        String(date.getDate()).padStart(2, '0');
+      
+      // Generate random 5-digit number
+      const random = Math.floor(10000 + Math.random() * 90000);
+      
+      order.orderNumber = `ORD-${dateStr}-${random}`;
+      
+      // Check if order number already exists (very unlikely)
+      const existing = await Order.findOne({ where: { orderNumber: order.orderNumber } });
+      if (existing) {
+        // If collision, add timestamp
+        order.orderNumber = `ORD-${dateStr}-${random}${Date.now().toString().slice(-3)}`;
+      }
+    }
+  }
 });
 
 module.exports = Order;
